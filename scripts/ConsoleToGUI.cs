@@ -1,8 +1,11 @@
 #region
 
+using System;
 using System.IO;
 using System.Net.Http;
+using System.Net.WebSockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -11,68 +14,73 @@ using UnityEngine;
 
 public class ConsoleToGui : MonoBehaviour
 {
-    [SerializeField]
-    private TextMeshProUGUI textZone;
 
-    //#if !UNITY_EDITOR
-    private string output;
-    private string stack;
+    ClientWebSocket client;
+    private bool serverNotConnectedMessageSent;
 
-    StreamWriter writer;
-    HttpClient client;
-    string url;
-
-    private void Awake()
-    {
-
-        url = "http://172.20.10.12:8080/log";
-        client = new HttpClient();
-        writer = new StreamWriter(Application.persistentDataPath + "/log.txt", true);
-    }
-
+// //======================================================================================\\
+// ||                                                                                      ||
+// ||                                       MODIFY HERE                                    ||
+// ||                                                                                      ||
+// PUT THE IPV4 ADDRESS HERE SO THAT THE FORMAT BECOMES : "ws://<IPV4>:8080/log/Occulus%20Quest%202"
+readonly string url = "ws://192.168.194.76:8080/log/Occulus%20Quest%202";
+// ||                                                                                      ||
+// \\======================================================================================//
+    
+    
     void OnEnable()
     {
-        //Application.logMessageReceived += Log;
-        //Application.logMessageReceived += Write;
-        Application.logMessageReceived += async (string logString, string stackTrace, LogType type) => await Post(logString, stackTrace);
+        Application.logMessageReceived += Handle;
     }
 
+    void Connect()
+    {
+        client.ConnectAsync(new Uri(url), CancellationToken.None);
+    }
+    
     void OnDisable()
     {
-        //Application.logMessageReceived -= Log;
-        //Application.logMessageReceived -= Write;
-        Application.logMessageReceived -= async (string logString, string stackTrace, LogType type) => await Post(logString, stackTrace);
+        Application.logMessageReceived -= Handle;
+        client.CloseAsync(WebSocketCloseStatus.Empty, null, CancellationToken.None);
     }
 
-    private void OnDestroy()
+    async void Handle(string logString, string stackTrace, LogType type)
     {
-        writer.Close();
+        try {
+            await Post(logString, stackTrace);
+            
+        } catch (Exception e) {
+            if (!serverNotConnectedMessageSent)
+            {
+                serverNotConnectedMessageSent = true;
+                Debug.LogError($"The UDP Server is not connected on the specified url : {url}");
+            }
+        }
+    }
+    
+
+    async Task Post(string logString, string stackTrace)
+    {
+        var text = logString + "\n" + stackTrace + "\n";
+
+        await Send(text);
     }
 
-    public void Log(string logString, string stackTrace, LogType type)
+    Task Send(string message)
     {
-        output = logString;
-        stack = stackTrace;
-        textZone.text = output + "\n" + stackTrace + "\n" + textZone.text;
-    }
+        if (ReferenceEquals(client, null))
+        {
+            client = new ClientWebSocket();
+            try {
+                Connect();
+                
+            } catch (Exception e) { Debug.LogError(e); }
+        }
 
-    public void Write(string logString, string stackTrace, LogType type)
-    {
-        output = logString;
-        stack = stackTrace;
-
-        writer.WriteLine(output);
-        writer.WriteLine(stackTrace);
-    }
-
-    public async Task Post(string logString, string stackTrace)
-    {
-        output = logString;
-        stack = stackTrace;
-
-        var text = output + "\n" + stack + "\n";
-        var data = new StringContent(text, Encoding.UTF8);
-
-        var response = await client.PostAsync(url, data);
+        Debug.Log($"Websocket : {client}");
+        return client.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(message)),
+            WebSocketMessageType.Text, true,
+            CancellationToken.None);
+        
     }
 }
