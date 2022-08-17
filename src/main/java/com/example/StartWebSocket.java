@@ -1,5 +1,7 @@
 package com.example;
 
+import io.quarkus.logging.Log;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.websocket.EncodeException;
 import javax.websocket.OnClose;
@@ -13,7 +15,7 @@ import java.io.IOException;
 
 import static java.util.Objects.requireNonNull;
 
-@ServerEndpoint("/start-websocket/{name}")
+@ServerEndpoint("/log/{name}")
 @ApplicationScoped
 public class StartWebSocket {
 
@@ -34,6 +36,17 @@ public class StartWebSocket {
 
     @OnMessage
     public void onMessage(String message, @PathParam("name") String name) {
-        System.out.println("onMessage> " + name + ": " + message);
+        log(message);
+    }
+
+    private static void log(String msg) {
+        String toLog =
+                "\n=========================================================================" +
+                        "\n=                               LOG                                     =" +
+                        "\n=========================================================================" +
+                        "\n" + msg +
+                        "\n=========================================================================";
+
+        Log.info(toLog);
     }
 }
