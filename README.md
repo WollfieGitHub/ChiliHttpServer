@@ -1,75 +1,13 @@
-# http_server Project
+# HTTP Server Log Output
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+## Steps to log the Output of the Occulus onto this server :
 
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
-
-## Running the application in dev mode
-
-You can run your application in dev mode that enables live coding using:
-
-```shell script
-./mvnw compile quarkus:dev
-```
-
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
-
-## Packaging and running the application
-
-The application can be packaged using:
-
-```shell script
-./mvnw package
-```
-
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
-
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./mvnw package -Dquarkus.package.type=uber-jar
-```
-
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using:
-
-```shell script
-./mvnw package -Pnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./mvnw package -Pnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/http_server-1.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult https://quarkus.io/guides/maven-tooling.
-
-## Related Guides
-
-- RESTEasy Reactive ([guide](https://quarkus.io/guides/resteasy-reactive)): A JAX-RS implementation utilizing build time
-  processing and Vert.x. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions
-  that depend on it.
-- WebSockets ([guide](https://quarkus.io/guides/websockets)): WebSocket communication channel support
-
-## Provided Code
-
-### RESTEasy Reactive
-
-Easily start your Reactive RESTful Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
-
-### WebSockets
-
-WebSocket communication channel starter code
-
-[Related guide section...](https://quarkus.io/guides/websockets)
+1. Connect both the computer running the server and the occulus on a local network created by a mobile device (This acts as an intermediate network before the EPFL one or mobile data)
+2. Go into your terminal and type `ipconfig`. Scroll to the "Wireless LAN adapter Wi-fi" header and search for the IPV4 field.
+3. Copy the IPV4 field value mentioned above in : 
+  1. The `quarkus.http.host` of the `application.properties` file located in `src/main/resources/` folder
+  2. The url var in the `ConsoleToGUI.cs` file located in `scripts/` folder such that the var is in the format `ws://<IPV4 address>:8080/log/...`
+4. Copy the `ConsoleToGUI.cs` script into your unity project and add an object with this script to your game
+5. Go to the root of the server's project with your terminal and type `mvnw package`
+6. Once it is done, navigate into the `target/` folder and type `java -jar <filename.jar>`
+7. Run the unity project into the headset and observe the logged messages on the console
